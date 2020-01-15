@@ -95,6 +95,8 @@ TEST_CASE("object") {
             {"string", PropertyType::String},
             {"data", PropertyType::Data},
             {"date", PropertyType::Date},
+            {"object id", PropertyType::ObjectId},
+            {"decimal", PropertyType::Decimal},
             {"object", PropertyType::Object|PropertyType::Nullable, "link target"},
 
             {"bool array", PropertyType::Array|PropertyType::Bool},
@@ -105,6 +107,8 @@ TEST_CASE("object") {
             {"data array", PropertyType::Array|PropertyType::Data},
             {"date array", PropertyType::Array|PropertyType::Date},
             {"object array", PropertyType::Array|PropertyType::Object, "array target"},
+            {"object id array", PropertyType::Array|PropertyType::ObjectId},
+            {"decimal array", PropertyType::Array|PropertyType::Decimal},
         }},
         {"all optional types", {
             {"pk", PropertyType::Int|PropertyType::Nullable, Property::IsPrimary{true}},
@@ -311,6 +315,8 @@ TEST_CASE("object") {
             {"data", "olleh"s},
             {"date", Timestamp(10, 20)},
             {"object", AnyDict{{"value", INT64_C(10)}}},
+            {"object id", ObjectId("000000000000000000000001")},
+            {"decimal", Decimal128("1.23e45")},
 
             {"bool array", AnyVec{true, false}},
             {"int array", AnyVec{INT64_C(5), INT64_C(6)}},
@@ -320,6 +326,8 @@ TEST_CASE("object") {
             {"data array", AnyVec{"d"s, "e"s, "f"s}},
             {"date array", AnyVec{Timestamp(10, 20), Timestamp(30, 40)}},
             {"object array", AnyVec{AnyDict{{"value", INT64_C(20)}}}},
+            {"object id array", AnyVec{ObjectId("AAAAAAAAAAAAAAAAAAAAAAAA"), ObjectId("BBBBBBBBBBBBBBBBBBBBBBBB")}},
+            {"decimal array", AnyVec{Decimal128("1.23e45"), Decimal128("6.78e9")}},
         });
 
         auto row = obj.obj();
@@ -336,6 +344,8 @@ TEST_CASE("object") {
         REQUIRE(row.get<Binary>(table->get_column_key("data")) == BinaryData("olleh", 5));
         REQUIRE(row.get<Timestamp>(table->get_column_key("date")) == Timestamp(10, 20));
         REQUIRE(row.get<ObjKey>(table->get_column_key("object")) == link_target.get_key());
+        REQUIRE(row.get<ObjectId>(table->get_column_key("object id")) == ObjectId("000000000000000000000001"));
+        REQUIRE(row.get<Decimal128>(table->get_column_key("decimal")) == Decimal128("1.23e45"));
 
         REQUIRE(link_target.get<Int>(target_table->get_column_key("value")) == 10);
 
@@ -358,6 +368,8 @@ TEST_CASE("object") {
         check_array(table->get_column_key("string array"), StringData("a"), StringData("b"), StringData("c"));
         check_array(table->get_column_key("data array"), BinaryData("d", 1), BinaryData("e", 1), BinaryData("f", 1));
         check_array(table->get_column_key("date array"), Timestamp(10, 20), Timestamp(30, 40));
+        check_array(table->get_column_key("object id array"), ObjectId("AAAAAAAAAAAAAAAAAAAAAAAA"), ObjectId("BBBBBBBBBBBBBBBBBBBBBBBB"));
+        check_array(table->get_column_key("decimal array"), Decimal128("1.23e45"), Decimal128("6.78e9"));
 
         auto list = row.get_linklist_ptr(table->get_column_key("object array"));
         REQUIRE(list->size() == 1);
@@ -374,6 +386,8 @@ TEST_CASE("object") {
             {"data", "olleh"s},
             {"date", Timestamp(10, 20)},
             {"object", AnyDict{{"value", INT64_C(10)}}},
+            {"object id", ObjectId("000000000000000000000001")},
+            {"decimal", Decimal128("1.23e45")},
 
             {"bool array", AnyVec{true, false}},
             {"int array", AnyVec{INT64_C(5), INT64_C(6)}},
@@ -383,6 +397,8 @@ TEST_CASE("object") {
             {"data array", AnyVec{"d"s, "e"s, "f"s}},
             {"date array", AnyVec{}},
             {"object array", AnyVec{AnyDict{{"value", INT64_C(20)}}}},
+            {"object id array", AnyVec{ObjectId("AAAAAAAAAAAAAAAAAAAAAAAA"), ObjectId("BBBBBBBBBBBBBBBBBBBBBBBB")}},
+            {"decimal array", AnyVec{Decimal128("1.23e45"), Decimal128("6.78e9")}},
         };
 
         auto obj = create(AnyDict{
@@ -400,6 +416,8 @@ TEST_CASE("object") {
         REQUIRE(row.get<String>(table->get_column_key("string")) == "hello");
         REQUIRE(row.get<Binary>(table->get_column_key("data")) == BinaryData("olleh", 5));
         REQUIRE(row.get<Timestamp>(table->get_column_key("date")) == Timestamp(10, 20));
+        REQUIRE(row.get<ObjectId>(table->get_column_key("object id")) == ObjectId("000000000000000000000001"));
+        REQUIRE(row.get<Decimal128>(table->get_column_key("decimal")) == Decimal128("1.23e45"));
 
         REQUIRE(row.get_listbase_ptr(table->get_column_key("bool array"))->size() == 2);
         REQUIRE(row.get_listbase_ptr(table->get_column_key("int array"))->size() == 2);
@@ -409,6 +427,8 @@ TEST_CASE("object") {
         REQUIRE(row.get_listbase_ptr(table->get_column_key("data array"))->size() == 3);
         REQUIRE(row.get_listbase_ptr(table->get_column_key("date array"))->size() == 0);
         REQUIRE(row.get_listbase_ptr(table->get_column_key("object array"))->size() == 1);
+        REQUIRE(row.get_listbase_ptr(table->get_column_key("object id array"))->size() == 2);
+        REQUIRE(row.get_listbase_ptr(table->get_column_key("decimal array"))->size() == 2);
     }
 
     SECTION("create can use defaults for primary key") {
@@ -425,6 +445,8 @@ TEST_CASE("object") {
             {"date", Timestamp(10, 20)},
             {"object", AnyDict{{"value", INT64_C(10)}}},
             {"array", AnyVector{AnyDict{{"value", INT64_C(20)}}}},
+            {"object id", ObjectId("000000000000000000000001")},
+            {"decimal", Decimal128("1.23e45")},
         });
 
         auto row = obj.obj();
@@ -488,6 +510,8 @@ TEST_CASE("object") {
             {"data", "olleh"s},
             {"date", Timestamp(10, 20)},
             {"object", AnyDict{{"value", INT64_C(10)}}},
+            {"object id", ObjectId("000000000000000000000001")},
+            {"decimal", Decimal128("1.23e45")},
 
             {"bool array", AnyVec{true, false}},
             {"int array", AnyVec{INT64_C(5), INT64_C(6)}},
@@ -497,6 +521,8 @@ TEST_CASE("object") {
             {"data array", AnyVec{"d"s, "e"s, "f"s}},
             {"date array", AnyVec{}},
             {"object array", AnyVec{AnyDict{{"value", INT64_C(20)}}}},
+            {"object id array", AnyVec{ObjectId("AAAAAAAAAAAAAAAAAAAAAAAA"), ObjectId("BBBBBBBBBBBBBBBBBBBBBBBB")}},
+            {"decimal array", AnyVec{Decimal128("1.23e45"), Decimal128("6.78e9")}},
         });
 
         auto token = obj.add_notification_callback([&](CollectionChangeSet c, std::exception_ptr) {
@@ -526,6 +552,8 @@ TEST_CASE("object") {
         REQUIRE(row.get<String>(table->get_column_key("string")) == "a");
         REQUIRE(row.get<Binary>(table->get_column_key("data")) == BinaryData("olleh", 5));
         REQUIRE(row.get<Timestamp>(table->get_column_key("date")) == Timestamp(10, 20));
+        REQUIRE(row.get<ObjectId>(table->get_column_key("object id")) == ObjectId("000000000000000000000001"));
+        REQUIRE(row.get<Decimal128>(table->get_column_key("decimal")) == Decimal128("1.23e45"));
     }
 
     SECTION("create with update - only with diffs") {
@@ -618,6 +646,9 @@ TEST_CASE("object") {
             {"data", "olleh"s},
             {"date", Timestamp(10, 20)},
             {"object", sub_obj},
+            {"object id", ObjectId("000000000000000000000001")},
+            {"decimal", Decimal128("1.23e45")},
+
         });
 
         auto obj_table = r->read_group().get_table("class_all types");
@@ -694,6 +725,8 @@ TEST_CASE("object") {
             {"data", "olleh"s},
             {"date", Timestamp(10, 20)},
             {"object array", AnyVec{AnyDict{{"value", INT64_C(20)}}, AnyDict{{"value", INT64_C(21)}}}},
+            {"object id", ObjectId("000000000000000000000001")},
+            {"decimal", Decimal128("1.23e45")},
         };
         Object obj = create(dict);
 
@@ -828,6 +861,8 @@ TEST_CASE("object") {
             {"date", Timestamp(10, 20)},
             {"object", AnyDict{{"value", INT64_C(10)}}},
             {"array", AnyVector{AnyDict{{"value", INT64_C(20)}}}},
+            {"object id", ObjectId("000000000000000000000001")},
+            {"decimal", Decimal128("1.23e45")},
         });
         REQUIRE_THROWS(create(AnyDict{
             {"pk", INT64_C(1)},
@@ -840,6 +875,8 @@ TEST_CASE("object") {
             {"date", Timestamp(10, 20)},
             {"object", AnyDict{{"value", INT64_C(10)}}},
             {"array", AnyVector{AnyDict{{"value", INT64_C(20)}}}},
+            {"object id", ObjectId("000000000000000000000001")},
+            {"decimal", Decimal128("1.23e45")},
         }));
     }
 
@@ -902,6 +939,12 @@ TEST_CASE("object") {
         obj.set_property_value(d, "date", util::Any(Timestamp(1, 2)));
         REQUIRE(any_cast<Timestamp>(obj.get_property_value<util::Any>(d, "date")) == Timestamp(1, 2));
 
+        obj.set_property_value(d, "object id", util::Any(ObjectId("111111111111111111111111")));
+        REQUIRE(any_cast<ObjectId>(obj.get_property_value<util::Any>(d, "object id")) == ObjectId("111111111111111111111111"));
+
+        obj.set_property_value(d, "decimal", util::Any(Decimal128("42.4242e42")));
+        REQUIRE(any_cast<Decimal128>(obj.get_property_value<util::Any>(d, "decimal")) == Decimal128("42.4242e42"));
+
         REQUIRE_FALSE(obj.get_property_value<util::Any>(d, "object").has_value());
         obj.set_property_value(d, "object", util::Any(linkobj));
         REQUIRE(any_cast<Object>(obj.get_property_value<util::Any>(d, "object")).obj().get_key() == linkobj.obj().get_key());
@@ -928,6 +971,8 @@ TEST_CASE("object") {
             {"string", "hello"s},
             {"data", "olleh"s},
             {"date", Timestamp(10, 20)},
+            {"object id", ObjectId("000000000000000000000001")},
+            {"decimal", Decimal128("1.23e45")},
 
             {"bool array", AnyVec{true, false}},
             {"object array", AnyVec{AnyDict{{"value", INT64_C(20)}}}},
