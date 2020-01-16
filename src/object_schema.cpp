@@ -51,27 +51,70 @@ ObjectSchema::ObjectSchema(std::string name, std::initializer_list<Property> per
     }
 }
 
-PropertyType ObjectSchema::from_core_type(Table const& table, ColKey col)
+PropertyType ObjectSchema::from_core_type(DataType type)
+{
+    switch (type) {
+        case type_Int:
+            return PropertyType::Int;
+        case type_Float:
+            return PropertyType::Float;
+        case type_Double:
+            return PropertyType::Double;
+        case type_Bool:
+            return PropertyType::Bool;
+        case type_String:
+            return PropertyType::String;
+        case type_Binary:
+            return PropertyType::Data;
+        case type_Timestamp:
+            return PropertyType::Date;
+        case type_OldMixed:
+            return PropertyType::Any;
+        case type_Link:
+            return PropertyType::Object | PropertyType::Nullable;
+        case type_LinkList:
+            return PropertyType::Object | PropertyType::Array;
+        default:
+            REALM_UNREACHABLE();
+    }
+}
+
+PropertyType ObjectSchema::from_core_type(ColKey col)
 {
     auto flags = PropertyType::Required;
-    auto attr = table.get_column_attr(col);
+    auto attr = col.get_attrs();
     if (attr.test(col_attr_Nullable))
         flags |= PropertyType::Nullable;
     if (attr.test(col_attr_List))
         flags |= PropertyType::Array;
-    switch (table.get_column_type(col)) {
-        case type_Int:       return PropertyType::Int | flags;
-        case type_Float:     return PropertyType::Float | flags;
-        case type_Double:    return PropertyType::Double | flags;
-        case type_Bool:      return PropertyType::Bool | flags;
-        case type_String:    return PropertyType::String | flags;
-        case type_Binary:    return PropertyType::Data | flags;
-        case type_Timestamp: return PropertyType::Date | flags;
-        case type_OldMixed:  return PropertyType::Any | flags;
-        case type_Link:      return PropertyType::Object | PropertyType::Nullable;
-        case type_LinkList:  return PropertyType::Object | PropertyType::Array;
-        default: REALM_UNREACHABLE();
+
+    PropertyType ret = from_core_type(DataType(col.get_type()));
+    return ret | flags;
+}
+
+DataType ObjectSchema::to_core_type(PropertyType type)
+{
+    REALM_ASSERT(type != PropertyType::Object); // Link columns have to be handled differently
+    REALM_ASSERT(type != PropertyType::Any);    // Mixed columns can't be created
+    switch (type & ~PropertyType::Flags) {
+        case PropertyType::Int:
+            return type_Int;
+        case PropertyType::Bool:
+            return type_Bool;
+        case PropertyType::Float:
+            return type_Float;
+        case PropertyType::Double:
+            return type_Double;
+        case PropertyType::String:
+            return type_String;
+        case PropertyType::Date:
+            return type_Timestamp;
+        case PropertyType::Data:
+            return type_Binary;
+        default:
+            REALM_COMPILER_HINT_UNREACHABLE();
     }
+    return type_Int; // Satisfy compiler
 }
 
 ObjectSchema::ObjectSchema(Group const& group, StringData name, TableKey key)
@@ -100,7 +143,7 @@ ObjectSchema::ObjectSchema(Group const& group, StringData name, TableKey key)
 
         Property property;
         property.name = column_name;
-        property.type = ObjectSchema::from_core_type(*table, col_key);
+        property.type = ObjectSchema::from_core_type(col_key);
         property.is_indexed = table->has_search_index(col_key) || table->get_primary_key_column() == col_key;
         property.column_key = col_key;
 
