@@ -281,7 +281,7 @@ public:
                 dict["primary_key"] = get_string(instr.primary_key_field);
                 dict["properties"][get_string(instr.primary_key_field)] = {
                     {"nullable", instr.primary_key_nullable},
-                    {"type", string_for_property_type(ObjectSchema::from_core_type(instr.primary_key_type))}};
+                    {"type", string_for_property_type(from_core_type(instr.primary_key_type))}};
             }
             add_instruction(Adapter::InstructionType::AddType, std::move(dict),
                             true, object_type);
@@ -448,7 +448,7 @@ public:
             }
             else {
                 add_column_instruction(m_selected_object_type, get_string(instr.field),
-                                       {{"type", string_for_property_type(ObjectSchema::from_core_type(instr.type))},
+                                       {{"type", string_for_property_type(from_core_type(instr.type))},
                                         {"nullable", instr.nullable}});
             }
         }

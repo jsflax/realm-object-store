@@ -68,10 +68,6 @@ public:
 
     friend bool operator==(ObjectSchema const& a, ObjectSchema const& b);
 
-    static PropertyType from_core_type(DataType type);
-    static PropertyType from_core_type(ColKey col);
-    static DataType to_core_type(PropertyType type);
-
 private:
     void set_primary_key_property();
 };
